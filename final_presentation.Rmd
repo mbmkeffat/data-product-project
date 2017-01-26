@@ -1,0 +1,67 @@
+---
+title: "Predicting iris species using unsupervised and supervised machine learning"
+author: "chenchi"
+date: "1/25/2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## Summary
+In this presentation, the `iris` data is analyzed using both unsupervised and supervised machine learning.
+The following two algorithms are used to perform the whole analysis.
+
+- **K-means clustering**
+- **Decision tree**
+
+A shiny app is developed to implement those two methods. The app features
+
+- Model selection
+- Feature selection
+- Interactive plot of the k-means results
+- Beautiful decision tree plot by `rpart.plot`
+
+## K-means clustering
+
+```{r, echo = TRUE, size= 'tiny'}
+options(warn=-1)
+suppressMessages(library(shiny))
+suppressMessages(library(rpart))
+suppressMessages(library(rpart.plot))
+suppressMessages(library(ggplot2))
+suppressMessages(library(plotly))
+data <- iris[, c("Sepal.Width", "Sepal.Length")]
+cluster_result <- kmeans(data, centers = 3)
+iris['cluster'] <- as.factor(cluster_result$cluster)
+prediction <- table(iris[, c('Species', 'cluster')])
+clusters <- colnames(prediction)[max.col(prediction)]
+clusters <- as.integer(clusters)
+names(clusters) <- row.names(prediction)
+iris['correct_predict'] <- clusters[iris[, 'Species']] == iris[, 'cluster']
+accuracy = sum(iris[, 'correct_predict'])/dim(iris)[1]
+g <- ggplot(iris, aes(x = Sepal.Width, y = Sepal.Length, color = Species, 
+                          shape = 'correct_predict', size = 'correct_predict')) + geom_point() + 
+                          ggtitle(paste('Accuracy ', accuracy))
+
+```
+
+## K-means (cont'd)
+
+```{r, echo = TRUE}
+ggplotly(g)
+```
+
+## Decision tree model
+
+```{r, echo = TRUE, size = 'tiny', fig.align= 'center', fig.width=6, fig.height=3.5}
+  fit <- rpart(Species ~., iris[, c('Species', "Sepal.Width", "Sepal.Length")])
+  class.pred <- table(predict(fit, type="class"), iris$Species)
+  accuracy <- sum(diag(class.pred))/sum(class.pred)
+  rpart.plot(fit)
+  title(paste('Accuracy ', accuracy))
+```
+
